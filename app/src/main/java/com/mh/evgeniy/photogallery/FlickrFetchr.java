@@ -121,7 +121,7 @@ public class FlickrFetchr {
             }
 
         }catch (JSONException ex){
-            Log.d("jsonString",ex.toString());
+            Log.d("jsonStringEx",ex.toString());
         }
 
 
