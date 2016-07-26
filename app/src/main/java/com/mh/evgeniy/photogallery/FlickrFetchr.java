@@ -3,6 +3,8 @@ package com.mh.evgeniy.photogallery;
 import android.net.Uri;
 import android.util.Log;
 
+import com.google.gson.Gson;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,9 +12,11 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -44,6 +48,7 @@ public class FlickrFetchr {
             connection.disconnect();
         }
     }
+
     public String getUrlString(String urlSpec) throws IOException {
         return new String(getUrlBytes(urlSpec));
     }
@@ -61,10 +66,15 @@ public class FlickrFetchr {
                     .appendQueryParameter("nojsoncallback", "1")
                     .appendQueryParameter("extras", "url_s")
                     .build().toString();
-            String jsonString = getUrlString(url);
+
+            String jsonString = getUrlString(url);//json который мы получили
+
             Log.i(TAG, "Received JSON: " + jsonString);
+
             JSONObject jsonBody = new JSONObject(jsonString);
-            parseItems(items, jsonBody);
+            //parseItems(items, jsonBody);
+            parseItems(items,jsonString);
+
         } catch (IOException ioe) {
             Log.e(TAG, "Failed to fetch items", ioe);
         } catch (JSONException je) {
@@ -77,7 +87,7 @@ public class FlickrFetchr {
     private void parseItems(List<GalleryItem> items, JSONObject jsonBody)
             throws IOException, JSONException {
 
-        /*JSONObject photosJsonObject = jsonBody.getJSONObject("photos");
+        JSONObject photosJsonObject = jsonBody.getJSONObject("photos");
         JSONArray photoJsonArray = photosJsonObject.getJSONArray("photo");
 
         for (int i = 0; i < photoJsonArray.length(); i++) {
@@ -92,9 +102,29 @@ public class FlickrFetchr {
             }
 
             item.setUrl(photoJsonObject.getString("url_s"));
-            items.add(item);*/
+
+
+            items.add(item);
         }
     }
 
+    private void parseItems(List<GalleryItem> items,String jsonString) throws JSONException{
+        try {
+            Gson gson=new Gson();
+            JSONObject photosJsonObject = new JSONObject(jsonString).getJSONObject("photos");
+            JSONArray photoArray=photosJsonObject.getJSONArray("photo");
+
+            GalleryItem[] photos = gson.fromJson(photoArray.toString(), GalleryItem[].class);
+
+            for(GalleryItem g:photos){
+                items.add(g);
+            }
+
+        }catch (JSONException ex){
+            Log.d("jsonString",ex.toString());
+        }
+
+
+    }
 
 }

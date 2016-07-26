@@ -1,9 +1,22 @@
 package com.mh.evgeniy.photogallery;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * Created by evgeniy on 25.07.2016.
  */
 public class GalleryItem {
+
+    @SerializedName("title")
+    public String mCaption;
+
+    @SerializedName("id")
+    public String mId;
+
+    @SerializedName("url_s")
+    public String mUrl;
+
+
     public String getCaption() {
         return mCaption;
     }
@@ -27,10 +40,6 @@ public class GalleryItem {
     public void setUrl(String url) {
         mUrl = url;
     }
-
-    private String mCaption;
-    private String mId;
-    private String mUrl;
 
     @Override
     public String toString(){

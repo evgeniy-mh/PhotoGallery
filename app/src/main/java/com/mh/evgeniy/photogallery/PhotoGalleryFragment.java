@@ -75,6 +75,7 @@ public class PhotoGalleryFragment  extends Fragment{
         }
         public void bindGalleryItem(GalleryItem item) {
             mTitleTextView.setText(item.toString());
+            //mTitleTextView.setText(item.getUrl()); //для проверки url_s
         }
     }
 
