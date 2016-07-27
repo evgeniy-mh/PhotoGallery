@@ -84,11 +84,47 @@ public class FlickrFetchr {
         return items;
     }
 
+    public List<GalleryItem> fetchItems(int page) {
+
+        List<GalleryItem> items = new ArrayList<>();
+
+        try {
+            String url = Uri.parse("https://api.flickr.com/services/rest/")
+                    .buildUpon()
+                    .appendQueryParameter("method", "flickr.photos.getRecent")
+                    .appendQueryParameter("api_key", API_KEY)
+                    .appendQueryParameter("format", "json")
+                    .appendQueryParameter("nojsoncallback", "1")
+                    .appendQueryParameter("extras", "url_s")
+                    .appendQueryParameter("page",String.valueOf(page))
+                    .build().toString();
+
+            String jsonString = getUrlString(url);//json который мы получили
+
+            Log.i(TAG, "Received JSON: " + jsonString);
+
+            JSONObject jsonBody = new JSONObject(jsonString);
+            //parseItems(items, jsonBody);
+            parseItems(items,jsonString);
+
+        } catch (IOException ioe) {
+            Log.e(TAG, "Failed to fetch items", ioe);
+        } catch (JSONException je) {
+            Log.e(TAG, "Failed to parse JSON", je);
+        }
+
+        return items;
+    }
+
     private void parseItems(List<GalleryItem> items, JSONObject jsonBody)
             throws IOException, JSONException {
 
         JSONObject photosJsonObject = jsonBody.getJSONObject("photos");
         JSONArray photoJsonArray = photosJsonObject.getJSONArray("photo");
+
+
+        Log.d("parseItemsPage",String.valueOf(photosJsonObject.getInt("page")));
+
 
         for (int i = 0; i < photoJsonArray.length(); i++) {
             JSONObject photoJsonObject = photoJsonArray.getJSONObject(i);
@@ -121,7 +157,7 @@ public class FlickrFetchr {
             }
 
         }catch (JSONException ex){
-            Log.d("jsonStringEx",ex.toString());
+            Log.d("jsonStringE",ex.toString());
         }
 
 
