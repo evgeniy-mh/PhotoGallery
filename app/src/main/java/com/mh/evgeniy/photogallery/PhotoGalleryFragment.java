@@ -1,8 +1,11 @@
 package com.mh.evgeniy.photogallery;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -29,6 +32,7 @@ public class PhotoGalleryFragment  extends Fragment{
     private int currentFlickrPage=1;
     private PhotoAdapter mPhotoAdapter;
     private int lastVisibleItem; //номер последнего показаного айтема
+    private ThumbnailDownloader<PhotoHolder> mThumbnailDownloader;
 
     public static PhotoGalleryFragment newInstance(){
         return new PhotoGalleryFragment();
@@ -41,7 +45,34 @@ public class PhotoGalleryFragment  extends Fragment{
         isLoading =true;
         new FetchItemsTask().execute();
 
-        Log.d("childCount","onCreate()");
+        Handler responseHandler=new Handler();
+        mThumbnailDownloader=new ThumbnailDownloader<>(responseHandler);
+
+        mThumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>() {
+            @Override
+            public void onThumbnailDownloaded(PhotoHolder photoHolder, Bitmap thumbnail) {
+                Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
+                photoHolder.bindDrawable(drawable);
+            }
+        });
+
+        mThumbnailDownloader.start();
+        mThumbnailDownloader.getLooper();
+        Log.i(TAG, "Background thread started");
+
+    }
+
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
+        mThumbnailDownloader.quit();
+        Log.i(TAG, "Background thread destroyed");
+    }
+
+    @Override
+    public void onDestroyView(){
+        super.onDestroyView();
+        mThumbnailDownloader.clearQueue();
     }
 
     @Override
@@ -72,13 +103,9 @@ public class PhotoGalleryFragment  extends Fragment{
                 }
             }
         });
-
-
         setupAdapter();
-
         return v;
     }
-
 
     private void setupAdapter(){
         if(isAdded()){
@@ -87,7 +114,6 @@ public class PhotoGalleryFragment  extends Fragment{
 
             GridLayoutManager manager=(GridLayoutManager) mRecyclerView.getLayoutManager();
             mRecyclerView.addOnScrollListener(new ScrollListener(manager));
-
         }
     }
 
@@ -178,6 +204,7 @@ public class PhotoGalleryFragment  extends Fragment{
             GalleryItem galleryItem = mGalleryItems.get(position);
             Drawable placeholder=getResources().getDrawable(R.drawable.bill_up_close);
             photoHolder.bindDrawable(placeholder);
+            mThumbnailDownloader.queueThumbnail(photoHolder,galleryItem.getUrl());
         }
         @Override
         public int getItemCount() {
