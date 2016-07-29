@@ -16,6 +16,8 @@ public class GalleryItem {
     @SerializedName("url_s")
     public String mUrl;
 
+    public boolean hasThumbnailBitmap=false;
+
 
     public String getCaption() {
         return mCaption;

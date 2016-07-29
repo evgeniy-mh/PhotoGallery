@@ -1,5 +1,7 @@
 package com.mh.evgeniy.photogallery;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -34,6 +36,7 @@ public class PhotoGalleryFragment  extends Fragment{
     private int lastVisibleItem; //номер последнего показаного айтема
     private ThumbnailDownloader<PhotoHolder> mThumbnailDownloader;
 
+
     public static PhotoGalleryFragment newInstance(){
         return new PhotoGalleryFragment();
     }
@@ -55,7 +58,7 @@ public class PhotoGalleryFragment  extends Fragment{
                 photoHolder.bindDrawable(drawable);
             }
         });
-
+        mThumbnailDownloader.setLruCache((ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE));
         mThumbnailDownloader.start();
         mThumbnailDownloader.getLooper();
         Log.i(TAG, "Background thread started");
@@ -94,7 +97,6 @@ public class PhotoGalleryFragment  extends Fragment{
                     oneColumnWidth = 200;
                     columnCount = (int) Math.floor(width / oneColumnWidth);
 
-                    //mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), columnCount));
                     GridLayoutManager layoutManager= (GridLayoutManager)mRecyclerView.getLayoutManager();
                     layoutManager.setSpanCount(columnCount);
 
@@ -128,7 +130,6 @@ public class PhotoGalleryFragment  extends Fragment{
 
         }
 
-
         @Override
         public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
             super.onScrollStateChanged(recyclerView, newState);
@@ -141,7 +142,7 @@ public class PhotoGalleryFragment  extends Fragment{
             if(!isLoading && (lastVisibleItem+threshold)>=totalItemsCount){
                 isLoading=true;
                         currentFlickrPage++;
-                        new FetchItemsTask().execute();
+                        //new FetchItemsTask().execute();
 
                         Log.d("childCount","end of list");
                         Log.d("childCount",String.valueOf(lastVisibleItem));
@@ -154,8 +155,8 @@ public class PhotoGalleryFragment  extends Fragment{
     private class FetchItemsTask extends AsyncTask<Void,Void,List<GalleryItem>>{
         @Override
         protected List<GalleryItem> doInBackground(Void... params) {
-            //return new FlickrFetchr().fetchItems();
-            return new FlickrFetchr().fetchItems(currentFlickrPage);
+            return new FlickrFetchr().fetchItems();
+            //return new FlickrFetchr().fetchItems(currentFlickrPage);
         }
 
         @Override
@@ -204,7 +205,23 @@ public class PhotoGalleryFragment  extends Fragment{
             GalleryItem galleryItem = mGalleryItems.get(position);
             Drawable placeholder=getResources().getDrawable(R.drawable.bill_up_close);
             photoHolder.bindDrawable(placeholder);
+
             mThumbnailDownloader.queueThumbnail(photoHolder,galleryItem.getUrl());
+
+            //предзагрузка
+            //найти соседние +10 и -10 галери айтемов и загрузить в кеш
+            for(int i=-10;i<=10;i++){
+
+                Log.d("предзагрузка","mGalleryItems.size()="+mGalleryItems.size());
+                Log.d("предзагрузка",""+(i+position));
+
+                if(!((i+position)<=0 || (i+position)>mGalleryItems.size())){
+                    mThumbnailDownloader.queueThumbnailToCache(mGalleryItems.get(position+i).getUrl());
+                }
+                else Log.d("предзагрузка","(mGalleryItems.get(position+i)==null");
+            }
+
+
         }
         @Override
         public int getItemCount() {
