@@ -30,7 +30,7 @@ public class ThumbnailDownloader<T> extends HandlerThread{
     private Handler mResponseHandler;
     private ThumbnailDownloadListener<T> mThumbnailDownloadListener;
     private LruCache mLruCache;
-    private List<String> mUrlRequestList=new ArrayList<>();
+
 
     public interface ThumbnailDownloadListener<T>{
         void onThumbnailDownloaded(T target,Bitmap thumbnail);
@@ -123,6 +123,8 @@ public class ThumbnailDownloader<T> extends HandlerThread{
     }
 
     private void handleRequestPreloadToCache(String url){
+
+
         try {
             byte[] bitmapBytes = new FlickrFetchr().getUrlBytes(url);
             final Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0, bitmapBytes.length);

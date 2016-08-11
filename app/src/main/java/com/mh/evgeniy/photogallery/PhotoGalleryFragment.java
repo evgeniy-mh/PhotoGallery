@@ -25,31 +25,31 @@ import java.util.List;
 /**
  * Created by evgeniy on 25.07.2016.
  */
-public class PhotoGalleryFragment  extends Fragment{
+public class PhotoGalleryFragment extends Fragment {
     private static final String TAG = "PhotoGalleryFragment";
 
     private RecyclerView mRecyclerView;
-    private List<GalleryItem> mItems=new ArrayList<>();
+    private List<GalleryItem> mItems = new ArrayList<>();
     private boolean isLoading;
-    private int currentFlickrPage=1;
+    private int currentFlickrPage = 1;
     private PhotoAdapter mPhotoAdapter;
     private int lastVisibleItem; //номер последнего показаного айтема
     private ThumbnailDownloader<PhotoHolder> mThumbnailDownloader;
 
 
-    public static PhotoGalleryFragment newInstance(){
+    public static PhotoGalleryFragment newInstance() {
         return new PhotoGalleryFragment();
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState){
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        isLoading =true;
+        isLoading = true;
         new FetchItemsTask().execute();
 
-        Handler responseHandler=new Handler();
-        mThumbnailDownloader=new ThumbnailDownloader<>(responseHandler);
+        Handler responseHandler = new Handler();
+        mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
 
         mThumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>() {
             @Override
@@ -66,42 +66,44 @@ public class PhotoGalleryFragment  extends Fragment{
     }
 
     @Override
-    public void onDestroy(){
+    public void onDestroy() {
         super.onDestroy();
         mThumbnailDownloader.quit();
         Log.i(TAG, "Background thread destroyed");
     }
 
     @Override
-    public void onDestroyView(){
+    public void onDestroyView() {
         super.onDestroyView();
         mThumbnailDownloader.clearQueue();
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,Bundle savedInstanceState){
-        View v=inflater.inflate(R.layout.fragment_photo_gallery,container,false);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.fragment_photo_gallery, container, false);
 
-        mRecyclerView=(RecyclerView) v.findViewById(R.id.fragment_photo_gallery_recycler_view);
+        mRecyclerView = (RecyclerView) v.findViewById(R.id.fragment_photo_gallery_recycler_view);
 
         mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
-        ViewTreeObserver vto=mRecyclerView.getViewTreeObserver();
+
+        ViewTreeObserver vto = mRecyclerView.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            int width=0;
+            int width = 0;
             int oneColumnWidth;
             int columnCount;
+
             @Override
             public void onGlobalLayout() {
-                if(width!=mRecyclerView.getMeasuredWidth()) {
+                if (width != mRecyclerView.getMeasuredWidth()) {
                     width = mRecyclerView.getMeasuredWidth();
                     oneColumnWidth = 200;
                     columnCount = (int) Math.floor(width / oneColumnWidth);
 
-                    GridLayoutManager layoutManager= (GridLayoutManager)mRecyclerView.getLayoutManager();
+                    GridLayoutManager layoutManager = (GridLayoutManager) mRecyclerView.getLayoutManager();
                     layoutManager.setSpanCount(columnCount);
 
-                    Log.d("listnr",String.valueOf(width));
-                    Log.d("listnr",String.valueOf(columnCount));
+                    Log.d("listnr", String.valueOf(width));
+                    Log.d("listnr", String.valueOf(columnCount));
                 }
             }
         });
@@ -109,24 +111,24 @@ public class PhotoGalleryFragment  extends Fragment{
         return v;
     }
 
-    private void setupAdapter(){
-        if(isAdded()){
-            mPhotoAdapter=new PhotoAdapter(mItems);
+    private void setupAdapter() {
+        if (isAdded()) {
+            mPhotoAdapter = new PhotoAdapter(mItems);
             mRecyclerView.setAdapter(mPhotoAdapter);
 
-            GridLayoutManager manager=(GridLayoutManager) mRecyclerView.getLayoutManager();
+            GridLayoutManager manager = (GridLayoutManager) mRecyclerView.getLayoutManager();
             mRecyclerView.addOnScrollListener(new ScrollListener(manager));
         }
     }
 
     private class ScrollListener extends RecyclerView.OnScrollListener {
         int totalItemsCount; //всего итемов в ресайклере
-        int threshold=5; //порог итемов, короче смотри в код
+        int threshold = 5; //порог итемов, короче смотри в код
         GridLayoutManager mManager;
 
-        public ScrollListener(GridLayoutManager manager){
-            mManager=manager;
-            Log.d("childCount",mManager.toString());
+        public ScrollListener(GridLayoutManager manager) {
+            mManager = manager;
+            Log.d("childCount", mManager.toString());
 
         }
 
@@ -134,99 +136,114 @@ public class PhotoGalleryFragment  extends Fragment{
         public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
             super.onScrollStateChanged(recyclerView, newState);
 
-            lastVisibleItem=mManager.findLastVisibleItemPosition();
-            totalItemsCount=mManager.getItemCount();
+            lastVisibleItem = mManager.findLastVisibleItemPosition();
+            totalItemsCount = mManager.getItemCount();
 
             //Log.d("childCount",String.valueOf(lastVisibleItem));
 
-            if(!isLoading && (lastVisibleItem+threshold)>=totalItemsCount){
-                isLoading=true;
-                        currentFlickrPage++;
-                        //new FetchItemsTask().execute();
+            if (!isLoading && (lastVisibleItem + threshold) >= totalItemsCount) {
+                isLoading = true;
+                currentFlickrPage++;
+                Log.d("след_стр", currentFlickrPage+"");
+                Log.d("след_стр", "lastVisibleItem="+lastVisibleItem);
+                Log.d("след_стр", "end of list");
+                new FetchItemsTask().execute();
 
-                        Log.d("childCount","end of list");
+                        /*Log.d("childCount","end of list");
                         Log.d("childCount",String.valueOf(lastVisibleItem));
                         Log.d("childCount",String.valueOf(threshold));
-                        Log.d("childCount",String.valueOf(totalItemsCount));
-                    }
-                }
+                        Log.d("childCount",String.valueOf(totalItemsCount));*/
+            }
+        }
     }
 
-    private class FetchItemsTask extends AsyncTask<Void,Void,List<GalleryItem>>{
+    private class FetchItemsTask extends AsyncTask<Void, Void, List<GalleryItem>> {
         @Override
         protected List<GalleryItem> doInBackground(Void... params) {
-            return new FlickrFetchr().fetchItems();
-            //return new FlickrFetchr().fetchItems(currentFlickrPage);
+            //return new FlickrFetchr().fetchItems();
+            Log.d("childCount", "FlickrFetchr().fetchItems(currentFlickrPage)");
+            return new FlickrFetchr().fetchItems(currentFlickrPage);
         }
 
         @Override
-        protected void onPostExecute(List<GalleryItem> items){
+        protected void onPostExecute(List<GalleryItem> items) {
             //mItems=items;
 
-            List<GalleryItem> buff=new ArrayList<GalleryItem>();
-            buff.addAll(items);
+            List<GalleryItem> buff = new ArrayList<GalleryItem>();
             buff.addAll(mItems);
+            buff.addAll(items);
 
-            mItems=buff;
+            mItems = buff;
             mPhotoAdapter.notifyDataSetChanged();
             mRecyclerView.getLayoutManager().scrollToPosition(lastVisibleItem);
+            Log.d("след_стр", "scrollToPosition "+lastVisibleItem);
 
-            isLoading =false;
+            isLoading = false;
             setupAdapter();
         }
     }
 
-    private class PhotoHolder extends RecyclerView.ViewHolder{
+    private class PhotoHolder extends RecyclerView.ViewHolder {
         private ImageView mItemImageView;
+
         public PhotoHolder(View itemView) {
             super(itemView);
             mItemImageView = (ImageView) itemView.findViewById(R.id.fragment_photo_gallery_image_view);
         }
-        public void bindDrawable(Drawable drawable){
+
+        public void bindDrawable(Drawable drawable) {
             mItemImageView.setImageDrawable(drawable);
         }
     }
 
-    private class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder>{
+    private class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder> {
 
         private List<GalleryItem> mGalleryItems;
+        private List<String> mUrlRequestListToCache = new ArrayList<>();
 
         public PhotoAdapter(List<GalleryItem> galleryItems) {
             mGalleryItems = galleryItems;
         }
+
         @Override
         public PhotoHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
-            LayoutInflater inflater=LayoutInflater.from(getActivity());
-            View view=inflater.inflate(R.layout.gallery_item,viewGroup,false);
+            LayoutInflater inflater = LayoutInflater.from(getActivity());
+            View view = inflater.inflate(R.layout.gallery_item, viewGroup, false);
             return new PhotoHolder(view);
         }
+
         @Override
         public void onBindViewHolder(PhotoHolder photoHolder, int position) {
             GalleryItem galleryItem = mGalleryItems.get(position);
-            Drawable placeholder=getResources().getDrawable(R.drawable.bill_up_close);
+            Drawable placeholder = getResources().getDrawable(R.drawable.bill_up_close);
             photoHolder.bindDrawable(placeholder);
 
-            mThumbnailDownloader.queueThumbnail(photoHolder,galleryItem.getUrl());
+            mThumbnailDownloader.queueThumbnail(photoHolder, galleryItem.getUrl());
 
             //предзагрузка
             //найти соседние +10 и -10 галери айтемов и загрузить в кеш
-            for(int i=-10;i<=10;i++){
+            String url;
+            for (int i = -4; i <= 4; i++) {
 
-                Log.d("предзагрузка","mGalleryItems.size()="+mGalleryItems.size());
-                Log.d("предзагрузка",""+(i+position));
+                if (!((i + position) <= 0 || (i + position) >= mGalleryItems.size())) {
+                    url = mGalleryItems.get(position + i).getUrl();
 
-                if(!((i+position)<=0 || (i+position)>mGalleryItems.size())){
-                    mThumbnailDownloader.queueThumbnailToCache(mGalleryItems.get(position+i).getUrl());
+                    if (!mUrlRequestListToCache.contains(url)) {
+                        mThumbnailDownloader.queueThumbnailToCache(url);
+                        mUrlRequestListToCache.add(url);
+                        //Log.d("предзагрузка",""+(i+position));
+                    }
                 }
-                else Log.d("предзагрузка","(mGalleryItems.get(position+i)==null");
+                //else Log.d("предзагрузка","(mGalleryItems.get(position+i)==null");
             }
 
 
         }
+
         @Override
         public int getItemCount() {
             return mGalleryItems.size();
         }
 
     }
-    }
+}
